@@ -37,10 +37,15 @@ doc / javacOptions := {
 
 testOptions += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1")
 
-val project = (projectMatrix in file("."))
+lazy val root = (project in file("."))
+  .settings(publishArtifact := false)
+  .aggregate(datastored.projectRefs: _*)
+
+val datastored = (projectMatrix in file("datastored"))
   .settings(
     name := "cucumber-scala-datastored",
     libraryDependencies ++= Seq(
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value,
       scalaCucumber,
       "junit" % "junit" % "4.13.2" % "test"
     ),
@@ -51,7 +56,7 @@ val project = (projectMatrix in file("."))
         case _ => Nil
       }
     },
-    Compile / compile / javacOptions ++= Seq("-encoding", "UTF-8", "-Xlint:unchecked", "-Xlint:deprecation"),
+    Compile / compile / javacOptions ++= Seq("-encoding", "UTF-8", "-Xlint:unchecked", "-Xlint:deprecation", "-XX:+UseG1GC"),
     Compile / unmanagedSourceDirectories ++= {
       val sourceDir = (Compile / sourceDirectory).value
       CrossVersion.partialVersion(scalaVersion.value) match {
@@ -67,7 +72,8 @@ val project = (projectMatrix in file("."))
       }
     }
   )
-  .jvmPlatform(scalaVersions = Seq(scala3, scala213, scala212))
+  // TODO: support scala 3
+  .jvmPlatform(scalaVersions = Seq(scala213, scala212))
 
 import ReleaseTransformations._
 
