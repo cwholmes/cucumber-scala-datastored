@@ -39,15 +39,16 @@ testOptions += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1")
 
 lazy val root = (project in file("."))
   .settings(publishArtifact := false)
-  .aggregate(datastored.projectRefs: _*)
+  .aggregate(datastored.projectRefs ++ examples.projectRefs: _*)
 
 val datastored = (projectMatrix in file("datastored"))
   .settings(
     name := "cucumber-scala-datastored",
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-      scalaCucumber,
-      "junit" % "junit" % "4.13.2" % "test"
+      cucumberScala,
+      junit % Test,
+      scalaTest % Test
     ),
     libraryDependencies ++= {
       CrossVersion.partialVersion(scalaVersion.value) match {
@@ -72,6 +73,46 @@ val datastored = (projectMatrix in file("datastored"))
       }
     }
   )
+  // TODO: support scala 3
+  .jvmPlatform(scalaVersions = Seq(scala213, scala212))
+
+val examples = (projectMatrix in file("examples"))
+  .settings(
+    name := "cucumber-scala-datastored-examples",
+    publishArtifact := false,
+    libraryDependencies ++= Seq(
+      cucumberScala,
+      cucumberCore,
+      cucumberJunit,
+      cucumberExpressions,
+      scalaTest,
+      junit % Test,
+      junitInterface % Test
+    ),
+    libraryDependencies ++= {
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, n)) if n == 12 =>
+          List("org.scala-lang.modules" %% "scala-collection-compat" % "2.7.0")
+        case _ => Nil
+      }
+    },
+    Compile / compile / javacOptions ++= Seq("-encoding", "UTF-8", "-Xlint:unchecked", "-Xlint:deprecation", "-XX:+UseG1GC"),
+    Compile / unmanagedSourceDirectories ++= {
+      val sourceDir = (Compile / sourceDirectory).value
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        // future versions can add directories specific to the scala version
+        case _ => Seq()
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val sourceDir = (Test / sourceDirectory).value
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        // future versions can add directories specific to the scala version
+        case _ => Seq()
+      }
+    }
+  )
+  .dependsOn(datastored)
   // TODO: support scala 3
   .jvmPlatform(scalaVersions = Seq(scala213, scala212))
 

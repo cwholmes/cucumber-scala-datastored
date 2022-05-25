@@ -57,6 +57,7 @@ trait DataStored {
   }
 
   val GivenWithReturn = new DataStoreStep("Given")
+  val WhenWithReturn = new DataStoreStep("When")
   val ThenWithReturn = new DataStoreStep("Then")
 
   final class DataStoreStep(name: String) {
